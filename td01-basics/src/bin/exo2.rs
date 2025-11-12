@@ -1,4 +1,10 @@
+/* Part 2
+  * Create a second function `fetch_finnhub(symbol: &str)` for Finnhub API
+  * Create a struct `StockPrice { symbol: String, price: f64, source: String, timestamp: i64 }`
+  * Fetch the same stock from both APIs in parallel using `tokio::join!`
+  * Compare the results
 
+---*/
 use reqwest;
 use serde::Deserialize;
 use std::env;

@@ -1,4 +1,9 @@
+/* Part 1
+  * Create an async function `fetch_mock_price(symbol: &str) -> f64` that sleeps for 500ms and returns a random price
+  * Call it for 3 different stock symbols sequentially
+  * Observe the total time taken
 
+---*/
 use tokio::time::{sleep, Duration};
 use rand::Rng;
 
