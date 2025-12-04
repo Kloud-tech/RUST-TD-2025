@@ -3,99 +3,138 @@
 <head>
     <title>Stock Price Dashboard</title>
     <style>
+        :root {
+            --bg: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f172a 100%);
+            --card: rgba(255, 255, 255, 0.08);
+            --accent: #38bdf8;
+            --accent-2: #f472b6;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        }
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .hero {
+            padding: 32px 24px 8px;
+            text-align: center;
         }
         h1 {
-            color: white;
-            text-align: center;
-            margin-bottom: 10px;
+            margin: 0;
+            font-size: 40px;
+            letter-spacing: 0.6px;
         }
         .status {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-            font-size: 14px;
+            margin-top: 8px;
+            font-size: 16px;
+            color: var(--muted);
         }
         .status.connected { color: #4ade80; }
-        .status.disconnected { color: #f87171; }
-        .stock-grid {
+        .status.disconnected { color: #fb7185; }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px auto 0;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            width: fit-content;
+            box-shadow: var(--shadow);
+        }
+        .tab {
+            padding: 10px 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--muted);
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .tab:hover {
+            color: var(--text);
+        }
+        .tab.active {
+            color: #0f172a;
+            background: linear-gradient(120deg, var(--accent), var(--accent-2));
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.3);
+        }
+
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+            padding: 24px;
+            max-width: 1200px;
+            margin: 0 auto 32px;
         }
-        .stock-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
+        .card {
+            background: var(--card);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease, border-color 0.2s;
         }
-        .stock-card:hover {
-            transform: translateY(-5px);
-        }
-        .stock-card.updated {
-            animation: pulse 0.5s;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        .symbol {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        .price {
-            font-size: 36px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 5px;
-        }
-        .source {
-            font-size: 12px;
-            color: #6b7280;
-            text-transform: uppercase;
-        }
-        .timestamp {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-top: 10px;
-        }
+        .card:hover { transform: translateY(-4px); border-color: rgba(255, 255, 255, 0.15); }
+        .card.updated { animation: pulse 0.5s; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+
+        .symbol { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+        .price { margin: 8px 0; font-size: 32px; font-weight: 700; }
+        .meta { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+        .timestamp { margin-top: 10px; font-size: 12px; color: var(--muted); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📈 Real-Time Stock Prices</h1>
+    <div class="hero">
+        <h1>Real-Time Stock Prices</h1>
         <div class="status" id="status">Connecting...</div>
-        <div class="stock-grid" id="stocks"></div>
+        <div class="tabs">
+            <div class="tab active" data-source="all">Toutes les sources</div>
+            <div class="tab" data-source="alpha_vantage">Alpha Vantage</div>
+            <div class="tab" data-source="finnhub">Finnhub</div>
+        </div>
     </div>
+
+    <div class="grid" id="stocks"></div>
 
     <script>
         let ws;
+        let activeSource = 'all';
         const stocks = new Map();
         const statusEl = document.getElementById('status');
         const stocksEl = document.getElementById('stocks');
+        const tabs = Array.from(document.querySelectorAll('.tab'));
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                activeSource = tab.dataset.source;
+                renderStocks();
+            });
+        });
 
         function connect() {
             ws = new WebSocket('ws://127.0.0.1:8082');
 
             ws.onopen = () => {
-                statusEl.textContent = '🟢 Connected';
+                statusEl.textContent = 'Connected';
                 statusEl.className = 'status connected';
             };
 
             ws.onclose = () => {
-                statusEl.textContent = '🔴 Disconnected - Reconnecting...';
+                statusEl.textContent = 'Disconnected - reconnecting...';
                 statusEl.className = 'status disconnected';
                 setTimeout(connect, 3000);
             };
@@ -106,12 +145,7 @@
 
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-
-                if (data.type === 'connected') {
-                    console.log(data.message);
-                    return;
-                }
-
+                if (data.type === 'connected') return;
                 const key = `${data.symbol}-${data.source}`;
                 stocks.set(key, data);
                 renderStocks();
@@ -119,23 +153,24 @@
         }
 
         function renderStocks() {
-            const sortedStocks = Array.from(stocks.values())
+            const filtered = Array.from(stocks.values())
+                .filter(s => activeSource === 'all' || s.source === activeSource)
                 .sort((a, b) => a.symbol.localeCompare(b.symbol));
 
-            stocksEl.innerHTML = sortedStocks.map(stock => {
+            stocksEl.innerHTML = filtered.map(stock => {
                 const date = new Date(stock.timestamp * 1000);
                 return `
-                    <div class="stock-card updated" id="card-${stock.symbol}-${stock.source}">
+                    <div class="card updated" id="card-${stock.symbol}-${stock.source}">
                         <div class="symbol">${stock.symbol}</div>
                         <div class="price">$${stock.price.toFixed(2)}</div>
-                        <div class="source">${stock.source}</div>
-                        <div class="timestamp">Updated: ${date.toLocaleTimeString()}</div>
+                        <div class="meta">${stock.source}</div>
+                        <div class="timestamp">Mise à jour : ${date.toLocaleTimeString()}</div>
                     </div>
                 `;
             }).join('');
 
             setTimeout(() => {
-                document.querySelectorAll('.stock-card.updated').forEach(card => {
+                document.querySelectorAll('.card.updated').forEach(card => {
                     card.classList.remove('updated');
                 });
             }, 500);
