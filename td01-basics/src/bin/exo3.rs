@@ -139,23 +139,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Save Alpha Vantage result
         match alpha_result {
-            Ok(price) => {
-                match save_price(&pool, &price).await {
-                    Ok(_) => println!("  [OK] Saved Alpha Vantage: ${:.2}", price.price),
-                    Err(e) => println!("  [ERROR] Failed to save Alpha Vantage: {}", e),
-                }
-            }
+            Ok(price) => match save_price(&pool, &price).await {
+                Ok(_) => println!("  [OK] Saved Alpha Vantage: ${:.2}", price.price),
+                Err(e) => println!("  [ERROR] Failed to save Alpha Vantage: {}", e),
+            },
             Err(e) => println!("  [WARN] Alpha Vantage error: {}", e),
         }
 
         // Save Finnhub result
         match finnhub_result {
-            Ok(price) => {
-                match save_price(&pool, &price).await {
-                    Ok(_) => println!("  [OK] Saved Finnhub: ${:.2}", price.price),
-                    Err(e) => println!("  [ERROR] Failed to save Finnhub: {}", e),
-                }
-            }
+            Ok(price) => match save_price(&pool, &price).await {
+                Ok(_) => println!("  [OK] Saved Finnhub: ${:.2}", price.price),
+                Err(e) => println!("  [ERROR] Failed to save Finnhub: {}", e),
+            },
             Err(e) => println!("  [WARN] Finnhub error: {}", e),
         }
 

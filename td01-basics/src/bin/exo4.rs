@@ -11,9 +11,9 @@ use serde::Deserialize;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::env;
-use tokio::time::{interval, Duration};
 use tokio::signal;
-use tracing::{info, error, warn, instrument};
+use tokio::time::{interval, Duration};
+use tracing::{error, info, instrument, warn};
 
 #[derive(Deserialize, Debug)]
 struct GlobalQuote {
@@ -132,11 +132,9 @@ async fn fetch_and_save_all(
     info!("Starting fetch cycle for {} symbols", symbols.len());
 
     for symbol in symbols {
-        // Fetch from multiple sources 
-        let (alpha_result, finnhub_result) = tokio::join!(
-            fetch_alpha_vantage(symbol),
-            fetch_finnhub(symbol)
-        );
+        // Fetch from multiple sources
+        let (alpha_result, finnhub_result) =
+            tokio::join!(fetch_alpha_vantage(symbol), fetch_finnhub(symbol));
 
         // Save results
         if let Ok(price) = alpha_result {
@@ -163,7 +161,8 @@ async fn fetch_and_save_all(
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables from .env file in current directory or parent
-    dotenv::from_filename(".env").ok()
+    dotenv::from_filename(".env")
+        .ok()
         .or_else(|| dotenv::from_filename("td01-basics/.env").ok());
 
     // Setup tracing
@@ -175,15 +174,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting stock price aggregator");
 
     // Configuration
-    let symbols = vec![
-        "AAPL".to_string(),
-        "GOOGL".to_string(),
-        "MSFT".to_string(),
-    ];
+    let symbols = vec!["AAPL".to_string(), "GOOGL".to_string(), "MSFT".to_string()];
 
     // Setup database connection pool
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set in .env file");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file");
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)

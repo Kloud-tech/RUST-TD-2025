@@ -4,15 +4,15 @@
   * Observe the total time taken
 
 ---*/
-use tokio::time::{sleep, Duration};
 use rand::Rng;
+use tokio::time::{sleep, Duration};
 
 #[tokio::main]
-async fn main(){
+async fn main() {
     println!("Starting stock price simulator...");
 
     let start = std::time::Instant::now();
-    
+
     let price1 = fetch_mock_price("AAPL").await;
     println!("AAPL: ${:.2}", price1);
 
@@ -21,7 +21,7 @@ async fn main(){
 
     let price3 = fetch_mock_price("MSFT").await;
     println!("MSFT: ${:.2}", price3);
-    
+
     let elapsed = start.elapsed();
     println!("Total time taken: {:.2}s", elapsed.as_secs_f64());
 }
@@ -30,5 +30,3 @@ async fn fetch_mock_price(_symbol: &str) -> f64 {
     sleep(Duration::from_millis(500)).await;
     rand::thread_rng().gen_range(50.0..500.0)
 }
-
-

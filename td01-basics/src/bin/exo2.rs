@@ -5,10 +5,10 @@
   * Compare the results
 
 ---*/
+use dotenv::dotenv;
 use reqwest;
 use serde::Deserialize;
 use std::env;
-use dotenv::dotenv;
 
 #[derive(Deserialize, Debug)]
 struct GlobalQuote {
@@ -34,12 +34,12 @@ struct AlphaVantageError {
 
 #[derive(Deserialize, Debug)]
 struct FinnhubQuote {
-    c: f64, // current price
-    h: f64, // high
-    l: f64, // low
-    o: f64, // open
+    c: f64,  // current price
+    h: f64,  // high
+    l: f64,  // low
+    o: f64,  // open
     pc: f64, // previous close
-    t: i64, // timestamp
+    t: i64,  // timestamp
 }
 
 #[derive(Debug)]
@@ -57,10 +57,7 @@ async fn fetch_alpha_vantage(symbol: &str) -> Result<f64, Box<dyn std::error::Er
         symbol, api_key
     );
 
-    let resp = reqwest::get(&url)
-        .await?
-        .json::<GlobalQuote>()
-        .await?;
+    let resp = reqwest::get(&url).await?.json::<GlobalQuote>().await?;
 
     Ok(resp.quote.price.parse()?)
 }
@@ -72,10 +69,7 @@ async fn fetch_finnhub(symbol: &str) -> Result<f64, Box<dyn std::error::Error>> 
         symbol, api_key
     );
 
-    let resp = reqwest::get(&url)
-        .await?
-        .json::<FinnhubQuote>()
-        .await?;
+    let resp = reqwest::get(&url).await?.json::<FinnhubQuote>().await?;
 
     Ok(resp.c)
 }
@@ -84,15 +78,13 @@ async fn fetch_finnhub(symbol: &str) -> Result<f64, Box<dyn std::error::Error>> 
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables from .env file
     dotenv().ok();
-    
+
     let symbol = "AAPL";
-    
-    // Fetch from both APIs 
-    let (alpha_result, finnhub_result) = tokio::join!(
-        fetch_alpha_vantage(symbol),
-        fetch_finnhub(symbol)
-    );
-    
+
+    // Fetch from both APIs
+    let (alpha_result, finnhub_result) =
+        tokio::join!(fetch_alpha_vantage(symbol), fetch_finnhub(symbol));
+
     // Handle results
     match alpha_result {
         Ok(price) => {
@@ -106,7 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(e) => println!("Alpha Vantage error: {}", e),
     }
-    
+
     match finnhub_result {
         Ok(price) => {
             let stock = StockPrice {
@@ -119,6 +111,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(e) => println!("Finnhub error: {}", e),
     }
-    
+
     Ok(())
 }
